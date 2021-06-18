@@ -9,7 +9,7 @@ import (
 func main() {
 
     service := ":1201"
-    tcpAddr, err := net.ResolveTCPAddr("tcp4", service)
+    tcpAddr, err := net.ResolveTCPAddr("ip4", service)
     checkError(err)
 
     listener, err := net.ListenTCP("tcp", tcpAddr)
@@ -20,12 +20,14 @@ func main() {
         if err != nil {
             continue
         }
-        handleClient(conn)
-        conn.Close()
+
+        go handleClient(conn)   // run as a goroutine. this is the beauty of go!
     }
+
 }
 
 func handleClient(conn net.Conn) {
+    defer conn.Close()  // close the connection on exit TODO: lookup "defer" keyword
 
     var buf [512]byte
     for {
@@ -33,7 +35,6 @@ func handleClient(conn net.Conn) {
         if err != nil {
             return
         }
-        fmt.Println(string(buf[0:]))
         _, err2 := conn.Write(buf[0:n])
         if err2 != nil {
             return
@@ -42,7 +43,6 @@ func handleClient(conn net.Conn) {
 }
 
 func checkError(err error) {
-    
     if err != nil {
         fmt.Fprintf(os.Stderr, "Fatal error: %s", err.Error())
         os.Exit(1)
